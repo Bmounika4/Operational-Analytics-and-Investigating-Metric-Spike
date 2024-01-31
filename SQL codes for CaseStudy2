@@ -1,0 +1,77 @@
+use project3;
+# Weekly User Engagement
+
+Select * from events;
+SELECT COUNT(DISTINCT user_id) AS user_engagement, WEEK(occurred_at) AS weeks
+FROM events
+GROUP BY weeks;
+
+
+# User Growth Analysis
+
+Select * from users;
+SELECT u.year_no, u.week_no, u.num_of_users,
+	SUM(u.num_of_users) OVER (ORDER BY u.year_no, u.week_no) AS user_growth
+FROM (SELECT YEAR(created_at) AS year_no, WEEK(created_at) AS week_no, 
+	COUNT(user_id) AS num_of_users
+FROM users 
+GROUP BY year_no,week_no
+) u
+
+
+# Weekly Retention Analysis
+
+select * from users;
+with user_create as(
+Select count(distinct events.user_id) as user_signup, 
+	week(occurred_at) as week_num, 
+    year(occurred_at) as year
+from users
+inner join events
+ON users.user_id = events.user_id
+Where event_name = 'complete_signup' and users.activated_at is not null
+group by week_num,year
+),
+user_engage as(
+Select count(distinct events.user_id) as user_retention, 
+	week(occurred_at) as week_num from users
+inner join events
+ON users.user_id = events.user_id
+Where event_name = 'login' and users.activated_at is not null
+group by week_num
+)
+select user_create.user_signup, 
+	user_engage.user_retention, 
+    user_engage.week_num,
+    user_create.year
+from user_create
+inner join user_engage on
+user_create.week_num = user_engage.week_num;
+
+
+#Weekly engagement per device
+
+Select count(distinct user_id) as user_engagement, week(occurred_at) as week_num, device
+From events
+where event_type = 'engagement'
+group by device,week_num;
+
+select count(action), action 
+from email_events 
+group by action; # But we have calculate the metrics like click rates and open rates of emails in percents
+
+SELECT 
+	100*sum(case 
+		when m.email_metrics = 'email_opens' then 1 else 0 end)/sum(case 
+        when m.email_metrics = 'email_sent'then 1 else 0 end) as email_open_rate,
+	100*sum(case 
+		when m.email_metrics = 'email_clicks' then 1 else 0 end)/sum(case 
+        when m.email_metrics = 'email_sent'then 1 else 0 end) as email_click_rate
+FROM(Select *,
+CASE
+	when action in ('sent_weekly_digest', 'sent_reengagement_email') Then 'email_sent'
+    when action = 'email_open' then 'email_opens'
+    when action = 'email_clickthrough' then 'email_clicks'
+    end as email_metrics
+    from email_events
+    ) m

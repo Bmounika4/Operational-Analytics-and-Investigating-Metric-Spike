@@ -1,0 +1,49 @@
+# jobs reviewed over time
+
+use case_study1;
+
+select ds, count(job_id) as jobs_per_day, sum(time_spent)/3600 as time_spent_day
+from job_data  
+group by ds
+order by ds;
+
+# Throughput analysis - no.of events per sec 
+select * from job_data;
+
+create temporary table event_sec
+(
+select ds,count(event) as event_day, count(event)/86400 as no_of_event_sec
+from job_data
+group by ds
+order by ds
+);
+
+
+# language share analysis
+Select * from job_data;
+
+
+select language, p.total_per_lan, 
+	round(p.total_per_lan/t.total_lan *100,2) as lan_percent_share
+from(
+	select language, count(language) as total_per_lan 
+	from job_data 
+	group by language)p,
+(select count(language) as total_lan 
+	from job_data)t
+;
+
+
+# Duplicate Row Detection
+
+
+SELECT * 
+FROM job_data
+WHERE job_id IN 
+	(SELECT COUNT(job_id) AS duplicate_rows 
+	FROM job_data 
+	GROUP BY job_id 
+	HAVING duplicate_rows>1
+	ORDER BY job_id)
+ order by job_id;
+ 
