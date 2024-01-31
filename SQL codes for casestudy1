@@ -1,0 +1,20 @@
+# jobs reviewed over time
+
+use case_study1;
+
+select ds, count(job_id) as jobs_per_day, sum(time_spent)/3600 as time_spent_day
+from job_data  
+group by ds
+order by ds;
+
+# Throughput analysis - no.of events per sec 
+select * from job_data;
+
+create temporary table event_sec
+(
+select ds,count(event) as event_day, count(event)/86400 as no_of_event_sec
+from job_data
+group by ds
+order by ds
+);
+
